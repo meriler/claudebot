@@ -1,0 +1,47 @@
+[Unit]
+Description=Claude/Codex Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=REPLACE_WITH_LINUX_USER
+WorkingDirectory=REPLACE_WITH_ABSOLUTE_REPO_PATH
+EnvironmentFile=REPLACE_WITH_ABSOLUTE_REPO_PATH/.env
+ExecStart=REPLACE_WITH_UV_PATH run telegram-bot
+Restart=on-failure
+RestartSec=5
+# After StartLimitBurst failures within StartLimitIntervalSec, systemd marks
+# the unit as 'failed' and refuses to restart it. To recover after fixing the
+# underlying issue, run:  systemctl reset-failed <service-name>
+StartLimitBurst=5
+StartLimitIntervalSec=60
+TimeoutStopSec=15
+
+# KillMode=control-group ensures that any child processes spawned by the bot
+# (claude CLI, tmux sessions, subagents) are killed when the unit stops. This
+# prevents zombie processes from holding Telegram getUpdates lock after a
+# restart — a recurring issue if the bot was ever started manually via `nohup`.
+KillMode=control-group
+
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Sandbox: filesystem write access.
+# IMPORTANT: ReadWritePaths MUST include /tmp — Claude Code uses it for
+# subprocess sandbox, temp files, and HTTP POST staging. Without /tmp,
+# deep research, worktree commands, and many MCP tools will fail with
+# "read-only filesystem" errors.
+# Replace REPLACE_WITH_HOME_DIR with the bot user's home directory.
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=REPLACE_WITH_HOME_DIR /tmp
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=telegram-bot
+
+[Install]
+WantedBy=multi-user.target

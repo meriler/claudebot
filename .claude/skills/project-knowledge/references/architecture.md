@@ -1,0 +1,30 @@
+# Architecture
+
+The bot runtime is split into:
+
+- `src/telegram_bot/__main__.py` - public entry point, aiogram wiring, shutdown.
+- `src/telegram_bot/core/handlers/` - Telegram command, text, media, voice, forward, topic, and TUI handlers.
+- `src/telegram_bot/core/services/` - session management, provider adapters, topic config, streaming, tmux, resume, MCP runtime, and transcription.
+- `src/telegram_bot/core/tui/` - tmux TUI capture, modal detection, keyboard controls, routing, and transcript helpers.
+- `mcp-servers/bot/` - MCP server that lets an agent send messages or files back to Telegram.
+- `src/telegram_bot/prompts/` - generic public prompt modes.
+
+Two independent runtime axes are important:
+
+- `engine`: `claude` or `codex`.
+- `exec_mode`: `streaming` (default), `subprocess`, or `tmux`.
+
+Claude Code CLI (2.1.130+) is always required: the startup preflight checks
+its presence and completed onboarding even when topics use Codex. Codex is an
+optional per-topic engine; Claude Code is preferred by default.
+
+`stream_mode` controls Telegram progress delivery:
+
+- `live+` (default): live progress plus intermediate agent replies streamed as
+  separate messages.
+- `live`: editable progress buffer plus final answer.
+- `verbose`: separate progress messages.
+- `minimal`: final-answer oriented delivery.
+
+Forum topics are isolated by `(chat_id, thread_id)`. Session mappings and tmux
+state are runtime files and must not be committed.

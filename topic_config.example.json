@@ -1,0 +1,31 @@
+{
+  "default_system_prompt": "Optional persona appended to the base Telegram prompt for every topic/chat without its own prompt.",
+  "chat_prompts": {
+    "REPLACE_WITH_DM_CHAT_ID": "Custom prompt for this DM/chat, appended on top of the persona. Set it from Telegram with /sysprompt."
+  },
+  "topics": {
+    "REPLACE_WITH_PROJECT_THREAD_ID": {
+      "name": "My Project",
+      "type": "project",
+      "mode": "free",
+      "cwd": "/path/to/your/project",
+      "mcp_config": "/path/to/your/project/.mcp.json",
+      "stream_mode": "live",
+      "exec_mode": "tmux",
+      "engine": "codex",
+      "model": null,
+      "system_prompt": "Optional per-topic prompt, appended on top of the persona. Set it from Telegram with /sysprompt."
+    },
+    "REPLACE_WITH_DEMO_THREAD_ID": {
+      "name": "Task demo",
+      "type": "assistant",
+      "mode": "task",
+      "cwd": null,
+      "mcp_config": null,
+      "stream_mode": "live",
+      "exec_mode": "subprocess",
+      "engine": "claude",
+      "model": null
+    }
+  }
+}
