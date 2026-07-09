@@ -110,7 +110,7 @@ def _check_bot_token(settings: Settings) -> CheckResult:
 
 
 def _check_claude(
-    claude_runner: Callable[..., "subprocess.CompletedProcess[str]"] = subprocess.run,
+    claude_runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> CheckResult:
     """Check Claude Code CLI is installed, modern enough, and onboarded."""
     binary = shutil.which("claude")
