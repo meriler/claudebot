@@ -20,6 +20,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -108,7 +109,9 @@ def _check_bot_token(settings: Settings) -> CheckResult:
     return CheckResult("bot_token", True, "set")
 
 
-def _check_claude(claude_runner: callable = subprocess.run) -> CheckResult:
+def _check_claude(
+    claude_runner: Callable[..., "subprocess.CompletedProcess[str]"] = subprocess.run,
+) -> CheckResult:
     """Check Claude Code CLI is installed, modern enough, and onboarded."""
     binary = shutil.which("claude")
     if binary is None:

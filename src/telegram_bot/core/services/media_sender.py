@@ -16,7 +16,6 @@ import tempfile
 import time
 import urllib.parse
 from collections import OrderedDict
-from collections.abc import MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -62,7 +61,7 @@ class MediaSender:
     def __init__(self, bot: Bot) -> None:
         self._bot = bot
         self._background_tasks: set[asyncio.Task[None]] = set()
-        self._sent_urls: dict[ChannelKey, MutableMapping[str, None]] = {}
+        self._sent_urls: dict[ChannelKey, OrderedDict[str, None]] = {}
         self._download_timestamps: dict[ChannelKey, list[float]] = {}
         self._download_semaphore = asyncio.Semaphore(3)
 

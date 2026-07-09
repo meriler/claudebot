@@ -2047,7 +2047,7 @@ class TmuxManager:
         logger.info("TUI_IO: clear_context session=%s", state.session_name)
 
         if self._usage_tracker is not None:
-            await self._usage_tracker.stop(channel_key)  # type: ignore[union-attr]
+            await self._usage_tracker.stop(channel_key)  # type: ignore[attr-defined]
 
         # Close buffer before cancelling the tail — see cancel() for rationale.
         await self.close_buffer(channel_key)
@@ -2527,7 +2527,7 @@ class TmuxManager:
     async def _kill_session_unlocked(self, channel_key: ChannelKey) -> None:
         # Stop usage pin before killing the tmux session.
         if self._usage_tracker is not None:
-            await self._usage_tracker.stop(channel_key)  # type: ignore[union-attr]
+            await self._usage_tracker.stop(channel_key)  # type: ignore[attr-defined]
 
         # Cancel tail loop first so send_stream unblocks.
         await self.cancel(channel_key)
@@ -2666,10 +2666,10 @@ class TmuxManager:
             return
         tc = self._topic_config
         if tc is not None:
-            topic = tc.get_topic(channel_key[1])  # type: ignore[union-attr]
+            topic = tc.get_topic(channel_key[1])  # type: ignore[attr-defined]
             if topic is not None and getattr(topic, "usage_pin", None) is False:
                 return
-        await tracker.start(  # type: ignore[union-attr]
+        await tracker.start(  # type: ignore[attr-defined]
             channel_key=channel_key,
             chat_id=chat_id,
             thread_id=channel_key[1],
