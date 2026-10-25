@@ -22,13 +22,14 @@ tokens, or machine-specific deployment config.
 - Use a persistent `tmux` session for real development work, or a short-lived
   subprocess for simple one-off tasks.
 - Send text, photos, documents, forwarded message batches, and optional voice
-  messages.
+  messages and round video notes (frames plus a transcript).
 - Use custom prompt modes for different workflows.
 - Open a live TUI snapshot with `/tui` and press buttons for Enter, Esc, arrows,
   digits, refresh, and close.
 - Resume saved sessions by replying to previous bot messages or with `/resume`.
 - Let the agent send messages, images, and documents back to Telegram through
   the bundled bot MCP server.
+- See live Claude Code usage (limits, cost) in an auto-updated pinned message.
 
 ## How It Works
 
@@ -183,6 +184,22 @@ Notes:
 - `VAULT`: optional path to a workspace/vault directory for file-saving agent
   skills (see Recommended Setup). Leave empty if you don't use one.
 
+`.env.example` documents more optional settings in its comments:
+
+- `HEARTBEAT_URL` / `HEARTBEAT_SECRET`: dead-man heartbeat — the bot pings the
+  URL (for example a healthchecks.io check) once a minute, so you get alerted
+  when it stops.
+- `LOG_FILE`: write a self-rotating log file (10 MB x 3) instead of stdout.
+- `NOTIFICATION_CHAT_ID`: where service notifications go (defaults to the
+  first allowed user).
+- `UNAUTHORIZED_REPLY`: canned reply for users not in `ALLOWED_USER_IDS`.
+- `ATTRIBUTE_SENDERS`: prefix prompts with the sender name in shared bots.
+- `CHECKPOINT_ON_RESET`: ask the agent to write a session checkpoint before
+  `/clear` drops the context.
+- Session/query timeouts and voice transcription fallbacks (fluidaudio,
+  Yandex SpeechKit).
+- `USAGE_PIN_ENABLED=false`: disable the pinned usage message (on by default).
+
 Run in the foreground:
 
 ```bash
@@ -237,6 +254,8 @@ Example:
 
 ```json
 {
+  "default_system_prompt": null,
+  "chat_prompts": {},
   "topics": {
     "42": {
       "name": "My App",
@@ -247,13 +266,23 @@ Example:
       "stream_mode": "live",
       "exec_mode": "tmux",
       "engine": "codex",
-      "model": null
+      "model": null,
+      "system_prompt": null
     }
   }
 }
 ```
 
-Fields:
+See `topic_config.example.json` for a fuller example.
+
+Top-level keys:
+
+- `default_system_prompt`: optional persona appended to the base prompt for
+  every topic/chat that has no prompt of its own.
+- `chat_prompts`: per-DM prompts keyed by `chat_id`, set with `/sysprompt`.
+- `topics`: per-topic settings keyed by `message_thread_id`.
+
+Topic fields:
 
 - `name`: human-readable label.
 - `type`: `assistant` or `project`.
@@ -265,6 +294,8 @@ Fields:
 - `exec_mode`: `streaming` (default), `tmux`, or `subprocess`.
 - `engine`: `claude` or `codex`.
 - `model`: optional model override, or `null`.
+- `system_prompt`: optional per-topic prompt appended on top of the persona,
+  usually set with `/sysprompt`.
 
 Use absolute paths for `cwd` and `mcp_config`. Set `mcp_config` to `null`
 unless you already have a real MCP config file for that project. Do not commit
@@ -434,6 +465,7 @@ Public prompt modes allow these generic bot tools:
 - `send_message`
 - `send_image`
 - `send_document`
+- `send_url_image` (downloads an image by URL and sends it)
 
 Keep real `.mcp.json` files out of git. They may contain tokens or local paths.
 
@@ -494,7 +526,8 @@ Do not commit runtime files:
 - `topic_config.json`
 - `session_mapping.json`
 - `channel_sessions.json`
-- `tmux_sessions/`
+- `usage_pins.json`, `outbox.json`
+- `tmux_sessions/`, `.codex/.sync/`
 - `data/`
 - `.mcp*.json`
 - `.venv/`, `.ruff_cache/`, `.mypy_cache/`, `.pytest_cache/`

@@ -23,11 +23,12 @@ CLI на вашем VPS. Он превращает Telegram в удаленны�
 - Использовать постоянную `tmux`-сессию для полноценной разработки или короткий
   subprocess для простых разовых задач.
 - Отправлять текст, фото, документы, пачки forwarded messages и, опционально,
-  voice messages.
+  voice messages и видеосообщения-кружки (кадры плюс расшифровка).
 - Делать свои prompt modes под разные сценарии.
 - Открывать live TUI snapshot через `/tui` и нажимать кнопки Enter, Esc,
   стрелки, цифры, refresh и close.
 - Возобновлять старые сессии через reply на сообщения бота или через `/resume`.
+- Видеть расход Claude Code (лимиты, стоимость) в автообновляемом закрепе.
 - Давать агенту отправлять сообщения, картинки и документы обратно в Telegram
   через встроенный bot MCP server.
 
@@ -186,6 +187,23 @@ VAULT=
   сохраняющих файлы (см. «Рекомендуемая Схема»). Оставьте пустым, если такой
   папки нет.
 
+В комментариях `.env.example` описаны и другие опциональные настройки:
+
+- `HEARTBEAT_URL` / `HEARTBEAT_SECRET`: dead-man heartbeat - бот раз в минуту
+  пингует URL (например, проверку на healthchecks.io), и вы получаете алерт,
+  если пинги прекратились.
+- `LOG_FILE`: писать лог в файл с автоматической ротацией (10 MB x 3) вместо
+  stdout.
+- `NOTIFICATION_CHAT_ID`: куда слать служебные уведомления (по умолчанию -
+  первому разрешенному пользователю).
+- `UNAUTHORIZED_REPLY`: шаблонный ответ пользователям не из `ALLOWED_USER_IDS`.
+- `ATTRIBUTE_SENDERS`: подписывать промты именем отправителя в общих ботах.
+- `CHECKPOINT_ON_RESET`: просить агента записать чекпоинт сессии перед тем, как
+  `/clear` сбросит контекст.
+- Таймауты сессий/запросов и запасные движки расшифровки голоса (fluidaudio,
+  Yandex SpeechKit).
+- `USAGE_PIN_ENABLED=false`: отключить закреп с расходом (по умолчанию включен).
+
 Запустите в foreground:
 
 ```bash
@@ -241,6 +259,8 @@ skill настроить topics.
 
 ```json
 {
+  "default_system_prompt": null,
+  "chat_prompts": {},
   "topics": {
     "42": {
       "name": "My App",
@@ -251,13 +271,23 @@ skill настроить topics.
       "stream_mode": "live",
       "exec_mode": "tmux",
       "engine": "codex",
-      "model": null
+      "model": null,
+      "system_prompt": null
     }
   }
 }
 ```
 
-Поля:
+Более полный пример - в `topic_config.example.json`.
+
+Ключи верхнего уровня:
+
+- `default_system_prompt`: опциональная persona, которая добавляется к базовому
+  промту для каждого топика/чата без собственного промта.
+- `chat_prompts`: промты для DM по `chat_id`, задаются через `/sysprompt`.
+- `topics`: настройки топиков по `message_thread_id`.
+
+Поля топика:
 
 - `name`: понятное название.
 - `type`: `assistant` или `project`.
@@ -269,6 +299,8 @@ skill настроить topics.
 - `exec_mode`: `streaming` (по умолчанию), `tmux` или `subprocess`.
 - `engine`: `claude` или `codex`.
 - `model`: опциональный override модели или `null`.
+- `system_prompt`: опциональный промт топика поверх persona, обычно задается
+  через `/sysprompt`.
 
 Для `cwd` и `mcp_config` используйте absolute paths. Ставьте `mcp_config` в
 `null`, если у вас еще нет настоящего MCP config file для проекта. Не коммитьте
@@ -440,6 +472,7 @@ MCP config.
 - `send_message`
 - `send_image`
 - `send_document`
+- `send_url_image` (скачивает картинку по URL и отправляет ее)
 
 Не коммитьте реальные `.mcp.json`: там могут быть токены или локальные пути.
 
@@ -500,7 +533,8 @@ sudo systemctl start telegram-bot
 - `topic_config.json`
 - `session_mapping.json`
 - `channel_sessions.json`
-- `tmux_sessions/`
+- `usage_pins.json`, `outbox.json`
+- `tmux_sessions/`, `.codex/.sync/`
 - `data/`
 - `.mcp*.json`
 - `.venv/`, `.ruff_cache/`, `.mypy_cache/`, `.pytest_cache/`
